@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Для моєї сестри ❤️</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0a050a; font-family: 'Verdana', sans-serif; touch-action: none; }
+        canvas { display: block; }
+        #text-container {
+            position: absolute; width: 100%; text-align: center; color: white;
+            top: 110%; /* Початкова позиція за межами екрану знизу */
+            transition: top 5s ease-out; /* Плавний підйом як у нашому Python коді */
+        }
+        h1 { font-size: 32px; margin-bottom: 20px; text-shadow: 0 0 15px #ba55d3; color: #ffffff; }
+        p { font-size: 19px; line-height: 1.7; color: #ffb6c1; font-style: italic; padding: 0 25px; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="text-container">
+        <h1 id="main-title">Найкращій сестрі у світі! ✨</h1>
+        <p>Ти завжди поруч, і це найцінніший подарунок.<br>
+           Бажаю тобі безмежного щастя, щирих усмішок<br>
+           та щоб усі твої найсміливіші мрії збувалися.<br>
+           Дякую, що ти є. Люблю тебе! ❤️</p>
+    </div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const textContainer = document.getElementById('text-container');
+    const mainTitle = document.getElementById('main-title');
+
+    let width, height, particles = [], bgHearts = [], stars = [], garland = [];
+    let state = 'pulse'; 
+    let bigHeartScale = 1;
+    let frame = 0;
+    const colors = ['#ff1493', '#ff69b4', '#dc143c', '#ff0000', '#ba55d3', '#ffffff'];
+
+    function init() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        stars = [];
+        for(let i=0; i<100; i++) {
+            stars.push({x: Math.random()*width, y: Math.random()*height, size: Math.random()*2.5, alpha: Math.random()});
+        }
+        garland = [];
+        for (let i = 0; i <= width; i += 80) {
+            garland.push({x: i, color: colors[0]});
+        }
+    }
+
+    function drawHeart(x, y, size, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.bezierCurveTo(x - size/2, y - size/2, x - size, y + size/3, x, y + size);
+        ctx.bezierCurveTo(x + size, y + size/3, x + size/2, y - size/2, x, y);
+        ctx.fill();
+    }
+
+    function update() {
+        ctx.fillStyle = '#0a050a';
+        ctx.fillRect(0, 0, width, height);
+
+        // 1. Мерехтливі зірки
+        stars.forEach(s => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() > 0.97 ? Math.random() : s.alpha})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // 2. Гірлянда зверху
+        garland.forEach(g => {
+            if(Math.random() > 0.9) g.color = colors[Math.floor(Math.random()*colors.length)];
+            ctx.fillStyle = g.color;
+            ctx.beginPath();
+            ctx.arc(g.x, 0, 8, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = g.color;
+        });
+        ctx.shadowBlur = 0;
+
+        // 3. Логіка великого серця (Пульсація + Трясіння)
+        if (state === 'pulse') {
+            frame++;
+            bigHeartScale = 1 + Math.sin(frame * 0.2) * 0.15;
+            let shakeX = frame > 120 ? (Math.random()-0.5)*18 : 0;
+            let shakeY = frame > 120 ? (Math.random()-0.5)*18 : 0;
+            
+            drawHeart(width/2 + shakeX, height/2 + shakeY, 120 * bigHeartScale, '#ba55d3');
+            
+            if (frame > 180) {
+                state = 'explode';
+                // Вибух: 100 частинок
+                for(let i=0; i<100; i++) {
+                    let angle = Math.random() * Math.PI * 2;
+                    let speed = Math.random() * 12 + 3;
+                    particles.push({
+                        x: width/2, y: height/2,
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        size: Math.random()*18 + 12, color: colors[Math.floor(Math.random()*colors.length)]
+                    });
+                }
+                setTimeout(() => {
+                    textContainer.style.top = '25%'; // Плавний підйом тексту
+                    state = 'final';
+                }, 600);
+            }
+        }
+
+        // 4. Анімація вибуху
+        if (state === 'explode' || state === 'final') {
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.vy += 0.25; // Гравітація
+                drawHeart(p.x, p.y, p.size, p.color);
+                if(p.y > height + 50) particles.splice(i, 1);
+            });
+        }
+
+        // 5. Фінальний дощ сердечок та переливання тексту
+        if (state === 'final') {
+            if(Math.random() > 0.93) {
+                bgHearts.push({x: Math.random()*width, y: height+30, speed: Math.random()*2+1.5, size: Math.random()*12 + 10});
+            }
+            if(Math.random() > 0.8) {
+                mainTitle.style.color = colors[Math.floor(Math.random()*colors.length)];
+            }
+        }
+
+        bgHearts.forEach((h, i) => {
+            h.y -= h.speed;
+            drawHeart(h.x, h.y, h.size, '#ff69b4');
+            if(h.y < -30) bgHearts.splice(i, 1);
+        });
+
+        requestAnimationFrame(update);
+    }
+
+    // Інтерактив: сердечко при дотику
+    canvas.addEventListener('touchstart', (e) => {
+        let touch = e.touches[0];
+        bgHearts.push({x: touch.clientX, y: touch.clientY, speed: 4, size: 25});
+    });
+
+    window.addEventListener('resize', init);
+    init();
+    update();
+</script>
+</body>
+</html>
